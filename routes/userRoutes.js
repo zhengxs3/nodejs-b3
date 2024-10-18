@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');
 const authToken = require('../middlewares/authToken');
+const validateData = require('../middlewares/validateData');
 
 // Swagger documentation for creating a user
 /**
@@ -29,7 +30,7 @@ const authToken = require('../middlewares/authToken');
  *      400:
  *        description: Bad Request.
  */
-router.post('/', userController.createUser);
+router.post('/', validateData, userController.createUser);
 
 // Swagger documentation for user login
 /**
@@ -57,7 +58,7 @@ router.post('/', userController.createUser);
  *      401:
  *        description: Unauthorized.
  */
-router.post('/login', userController.loginUser);
+router.post('/login', validateData, userController.loginUser);
 
 // Swagger documentation for getting all users
 /**
@@ -141,7 +142,7 @@ router.get('/:id', authToken, userController.getUserById);
  *      404:
  *        description: User not found.
  */
-router.put('/:id', authToken, userController.updateUser);
+router.put('/:id', authToken, validateData, userController.updateUser);
 
 // Swagger documentation for deleting a user
 /**

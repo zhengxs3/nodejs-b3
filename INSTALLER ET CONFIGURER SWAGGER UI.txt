@@ -23,3 +23,5 @@ Pour l'instant nous n'avons pas du tout de validation de donnée.
 
 Cherchez et installer un système de validation des données avant de lancer la requête
 (TIP: C'est aussi un middleware)
+
+Personellement je vais utiliser "JOI".

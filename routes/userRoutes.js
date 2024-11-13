@@ -58,7 +58,7 @@ router.post('/', validateData, userController.createUser);
  *      401:
  *        description: Unauthorized.
  */
-router.post('/login', validateData, userController.loginUser);
+router.post('/login', userController.loginUser);
 
 // Swagger documentation for getting all users
 /**

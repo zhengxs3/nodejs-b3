@@ -100,7 +100,7 @@ function Chat() {
 
   const handleRecipientClick = (id) => {
     setRecipientId(id);
-    setFeedback(''); // Clear typing feedback when switching conversations
+    setFeedback('');
   };
 
   const currentMessages = conversations[recipientId] || [];

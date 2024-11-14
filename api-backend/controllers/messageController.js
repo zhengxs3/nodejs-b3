@@ -1,6 +1,16 @@
 const Message = require('../models/messageModel');
 const ConversationController = require('./conversationController');
 
+exports.getAllMessages = async () => {
+  try {
+    const messages = await Message.find().populate('sender', 'username');
+    return messages;
+  } catch (error) {
+    console.error('Error retrieving all messages:', error);
+    throw error;
+  }
+};
+
 exports.saveMessage = async (conversationId, senderId, text) => {
   try {
     const message = new Message({

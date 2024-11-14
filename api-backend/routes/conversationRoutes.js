@@ -2,6 +2,16 @@ const express = require('express');
 const router = express.Router();
 const ConversationController = require('../controllers/conversationController');
 
+// Route to get all conversations (useful for admin purposes)
+router.get('/', async (req, res) => {
+  try {
+    const conversations = await ConversationController.getAllConversations();
+    res.status(200).json(conversations);
+  } catch (error) {
+    res.status(500).json({ message: 'Error retrieving conversations', error: error.message });
+  }
+});
+
 // Route to create or find a conversation
 router.post('/', async (req, res) => {
   const { participants } = req.body;

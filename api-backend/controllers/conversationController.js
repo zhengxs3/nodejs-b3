@@ -1,5 +1,15 @@
 const Conversation = require('../models/conversationModel');
 
+exports.getAllConversations = async () => {
+  try {
+    const conversations = await Conversation.find().populate('participants', 'username');
+    return conversations;
+  } catch (error) {
+    console.error('Error retrieving all conversations:', error);
+    throw error;
+  }
+};
+
 exports.createOrFindConversation = async (participants) => {
   try {
     // Check if a conversation exists with the same participants

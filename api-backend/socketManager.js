@@ -1,16 +1,12 @@
-// socketManager.js
-const ConversationController = require('./controllers/conversationController');
-const MessageController = require('./controllers/messageController');
 const jwt = require('jsonwebtoken');
 
-let users = {}; // Map userId to { socketId, username }
+let users = {};
 
 module.exports = (io) => {
 
-  // Middleware to authenticate socket connections using JWT
   io.use((socket, next) => {
     const token = socket.handshake.query.token;
-    console.log("Received token:", token); // Debugging
+    console.log("Received token:", token);
   
     if (!token) {
       console.error('Authentication error: Token required');
@@ -20,7 +16,7 @@ module.exports = (io) => {
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       socket.userId = decoded.userId;
-      console.log("User authenticated with ID:", socket.userId); // Debugging
+      console.log("User authenticated with ID:", socket.userId);
       next();
     } catch (error) {
       console.error('JWT verification failed:', error);
@@ -42,35 +38,34 @@ module.exports = (io) => {
     });
 
     // Handle incoming messages
-socket.on("message", async (message) => {
-  console.log("Server received message event:", message); // Debugging
+    socket.on("message", async (message) => {
+      console.log("Server received message event:", message);
 
-  const sender = users[socket.userId];
-  if (!sender) return;
+      const sender = users[socket.userId];
+      if (!sender) return;
 
-  const { text, recipientId } = message;
-  try {
-    // Get or create the conversation
-    const recipient = users[recipientId] ? recipientId : null;
-    const participants = recipient ? [sender.userId, recipient] : [sender.userId];
-    const conversation = await ConversationController.createOrFindConversation(participants);
-    
-    // Save and broadcast the message
-    const newMessage = await MessageController.saveMessage(conversation._id, sender.userId, text);
-    console.log("Message saved and broadcasting:", newMessage); // Debugging
+      const { text, recipientId } = message;
+      try {
+        // Get or create the conversation
+        const recipient = users[recipientId] ? recipientId : null;
+        const participants = recipient ? [sender.userId, recipient] : [sender.userId];
+        const conversation = await ConversationController.createOrFindConversation(participants);
+        
+        // Save and broadcast the message
+        const newMessage = await MessageController.saveMessage(conversation._id, sender.userId, text);
+        console.log("Message saved and broadcasting:", newMessage);
 
-    if (recipientId === "All") {
-      io.emit("message", newMessage);
-    } else if (recipient) {
-      const recipientSocketId = users[recipient].socketId;
-      io.to(recipientSocketId).emit("privateMessage", newMessage);
-      socket.emit("privateMessage", newMessage);
-    }
-  } catch (error) {
-    console.error("Error handling message:", error);
-  }
-});
-
+        if (recipientId === "All") {
+          io.emit("message", newMessage);
+        } else if (recipient) {
+          const recipientSocketId = users[recipient].socketId;
+          io.to(recipientSocketId).emit("privateMessage", newMessage);
+          socket.emit("privateMessage", newMessage);
+        }
+      } catch (error) {
+        console.error("Error handling message:", error);
+      }
+    });
 
     // Handle typing event
     socket.on('typing', ({ recipientId, feedback }) => {

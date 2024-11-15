@@ -6,72 +6,28 @@ const mongoose = require('mongoose');
 const mongoURI = process.env.MONGO_URI;
 const swaggerJSDoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
+const {Server} = require('socket.io');
+const SocketManager = require('./socketManager');
 
-const socketIo = require('socket.io');
 const cors = require('cors');
 const http = require('http');
 
 app.use(express.json());
 app.use(cors());
 
-// Socket IO CONFIG
-const server = http.createServer(app); 
-const io = socketIo(server, {
+// Create an HTTP server
+const server = http.createServer(app);
+
+// Initialize socket.io
+const io = new Server(server, {
   cors: {
-    origin: 'http://localhost:5173',
+    origin: '*', // Adjust this based on your frontend origin
+    methods: ['GET', 'POST'],
   },
-})
-
-let socketsConnected = new Set();
-let users = {};
-
-io.on('connection', (socket) => {
-  console.log(`New client connected : ${socket.id}`)
-  socketsConnected.add(socket.id);
-
-  socket.on('setUsername', (username) => {
-    users[socket.id] = username;
-    console.log("Liste d'utilisateurs : ", users);
-    io.emit('updateUserList', users);
-  })
-
-  socket.on('message', (message) => {
-    console.log("Message : ", message);
-    if(message.recipientId === 'All') {
-      io.emit('message', message);
-    } else {
-      io.to(message.recipientId).emit('privateMessage', message);
-      socket.emit('privateMessage', message);
-    }
-  })
-
-  socket.on('typing', ({recipientId, feedback}) => {
-    if (recipientId === 'All') {
-      socket.broadcast.emit('typing', {recipientId, feedback});
-    } else {
-      socket.to(recipientId).emit('typing', {recipientId, feedback});
-    }
-  })
-
-  socket.on('stopTyping', (recipientId) => {
-    if (recipientId === 'All') {
-      socket.broadcast.emit('typing', {recipientId, feedback: ''});
-    } else {
-      socket.to(recipientId).emit('typing', {recipientId, feedback: ''});
-    }
-  })
-
-  io.emit('clientsTotal', socketsConnected.size);
-
-  socket.on('disconnect', () => {
-    console.log(`Client disconnected : ${socket.id}`)
-    socketsConnected.delete(socket.id);
-    delete users[socket.id];
-    io.emit('updateUserList', users);
-    io.emit('clientsTotal', socketsConnected.size);
-  });
-
 });
+
+// Pass the `io` instance to SocketManager
+SocketManager(io);
 
 // ROUTES CONFIG
 const apiRoutes = require('./routes');

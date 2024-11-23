@@ -11,7 +11,7 @@ function Chat() {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
   const [feedback, setFeedback] = useState('');
-  const [clientsTotal, setClientsTotal] = useState(0); // 存储上一条消息的时间
+  const [clientsTotal, setClientsTotal] = useState(0);
   const [users, setUsers] = useState({});
   const [recipientId, setRecipientId] = useState('All');
   const [conversations, setConversations] = useState({ All: [] });
@@ -44,7 +44,6 @@ function Chat() {
       }));
     });
 
-
     socket.on('clientsTotal', (totalClients) => {
       setClientsTotal(totalClients);
     });
@@ -53,20 +52,17 @@ function Chat() {
       setUsers(userList);
     });
 
-    //typing
-    socket.on('typing', ({ recipientId: typingRecipientId, feedback }) => {
-      setFeedback(feedback);
-    });
+    // socket.on('typing', ({ recipientId: typingRecipientId, feedback }) => {
+    //   setFeedback(feedback);
+    // });
 
-     //message trop vite
-     socket.on('messageTropVite', (data) => {
-      setFeedback(data.error); // 使用一个状态来显示错误信息
-    });
-
-    socket.on('newClient', (data) => {
-      setFeedback(data.error); // 使用一个状态来显示错误信息
-    });
-
+    return () => {
+      socket.off('message');
+      socket.off('privateMessage');
+      socket.off('typing');
+      socket.off('clientsTotal');
+      socket.off('updateUserList');
+    };
   }, [name, recipientId]);
 
   const handleNameChange = (e) => {
@@ -77,6 +73,13 @@ function Chat() {
   const handleMessageChange = (e) => {
     setMessage(e.target.value);
   };
+
+  // const handleBlur = () => {
+  //   if (message.trim() === "") {
+  //     setFeedback(''); // 清空反馈
+  //     socket.emit('stopTyping', recipientId); // 通知服务器停止输入
+  //   }
+  // };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -96,27 +99,13 @@ function Chat() {
   };
 
   const handleTyping = () => {
-    socket.emit('typing', {
-      recipientId,
-      feedback: `${name} is typing a message...`,
-    });
-  };
-
-  // // 用户加入时通知
-  // const handleUserConnect = () => {
-  //   socket.emit('userConnected', {
-  //     recipientId,
-  //     feedback: `${name} a rejoint le chat`,
-  //   });
-  // };
-
-  // const handleUserDisconnect = () => {
-  //   socket.emit('userDisconnected', {
-  //     recipientId: "All",
-  //     feedback: `${name} a quitté le chat`,
-  //   });
-  // };
-
+  if (!name.trim()) return;
+  console.log('Sending typing event to:', recipientId); // 调试日志
+  socket.emit('typing', {
+    recipientId,
+    feedback: `${name} is typing a message...`,
+  });
+};
 
   const handleRecipientClick = (id) => {
     setRecipientId(id);
@@ -203,9 +192,7 @@ function Chat() {
                 value={message}
                 onChange={handleMessageChange}
                 onKeyUp={handleTyping}
-                // onKeyUp1={handleUserConnect}
-                // onKeyUp2={handleUserDisconnect}
-
+                // onBlur={handleBlur} // 添加失去焦点事件
               />
               <div className="verticalDivider"></div>
               <button type="submit" className="sendButton">

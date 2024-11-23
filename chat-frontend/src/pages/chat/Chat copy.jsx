@@ -11,7 +11,7 @@ function Chat() {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
   const [feedback, setFeedback] = useState('');
-  const [clientsTotal, setClientsTotal] = useState(0); // 存储上一条消息的时间
+  const [clientsTotal, setClientsTotal] = useState(0);
   const [users, setUsers] = useState({});
   const [recipientId, setRecipientId] = useState('All');
   const [conversations, setConversations] = useState({ All: [] });
@@ -44,6 +44,9 @@ function Chat() {
       }));
     });
 
+    socket.on('typing', ({ recipientId: typingRecipientId, feedback }) => {
+      setFeedback(feedback);
+    });
 
     socket.on('clientsTotal', (totalClients) => {
       setClientsTotal(totalClients);
@@ -53,20 +56,13 @@ function Chat() {
       setUsers(userList);
     });
 
-    //typing
-    socket.on('typing', ({ recipientId: typingRecipientId, feedback }) => {
-      setFeedback(feedback);
-    });
-
-     //message trop vite
-     socket.on('messageTropVite', (data) => {
-      setFeedback(data.error); // 使用一个状态来显示错误信息
-    });
-
-    socket.on('newClient', (data) => {
-      setFeedback(data.error); // 使用一个状态来显示错误信息
-    });
-
+    return () => {
+      socket.off('message');
+      socket.off('privateMessage');
+      socket.off('typing');
+      socket.off('clientsTotal');
+      socket.off('updateUserList');
+    };
   }, [name, recipientId]);
 
   const handleNameChange = (e) => {
@@ -101,22 +97,6 @@ function Chat() {
       feedback: `${name} is typing a message...`,
     });
   };
-
-  // // 用户加入时通知
-  // const handleUserConnect = () => {
-  //   socket.emit('userConnected', {
-  //     recipientId,
-  //     feedback: `${name} a rejoint le chat`,
-  //   });
-  // };
-
-  // const handleUserDisconnect = () => {
-  //   socket.emit('userDisconnected', {
-  //     recipientId: "All",
-  //     feedback: `${name} a quitté le chat`,
-  //   });
-  // };
-
 
   const handleRecipientClick = (id) => {
     setRecipientId(id);
@@ -203,9 +183,6 @@ function Chat() {
                 value={message}
                 onChange={handleMessageChange}
                 onKeyUp={handleTyping}
-                // onKeyUp1={handleUserConnect}
-                // onKeyUp2={handleUserDisconnect}
-
               />
               <div className="verticalDivider"></div>
               <button type="submit" className="sendButton">
